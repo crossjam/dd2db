@@ -21,8 +21,9 @@ classifiers = [
 ]
 
 dependencies = [
-	     "sqlite-utils",
 	     "click",
+	     "sqlite-utils",
+	     "xonsh",
 	     "docopt",
 	     "lxml",
 	     "requests",
@@ -44,6 +45,10 @@ dd2db = "dd2db.cli:cli"
 [project.optional-dependencies]
 
 test = ["pytest"]
+
+postgresql = ["psycopg2"]
+
+
 
 
 
