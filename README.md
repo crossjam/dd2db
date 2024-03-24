@@ -1,9 +1,15 @@
-# d3xp: Discogs Datadumps: Derivations, eXtractions, and Processing
+# dd2db: Discogs datasets 2 database
 
-An assortment of tools, code, and projects oriented around using the
-[Discogs Datadumps][1] as a playground for large(ish) scale data
-processing experiments and personal development. The data is real
-world (supports [discogs.com](https://discogs.com), quite longitudinal
-(spanning 12 years), updated monthly, and of course a bit messy.
+A recasting of code from
+[discogs-xml2db](https://github.com/philipmat/discogs-xml2db) code for
+the modern era.
+
+An CLI toolkit oriented around taking the [Discogs Datadumps][1] and
+ingesting into various database systems,
+[sqlite3](https://www.sqlite.org) and
+[Postgresql](https://www.postgresql.org).  The data is real world
+recorded music data (supports [discogs.com](https://discogs.com),
+quite longitudinal (spanning 16 years as of 2024), updated monthly,
+and of course a bit messy.
 
 [1]: https://data.discogs.com/
