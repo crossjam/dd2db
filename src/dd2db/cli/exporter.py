@@ -14,6 +14,7 @@ import bz2
 import csv
 import glob
 import gzip
+import logging
 import os
 
 from docopt import docopt
@@ -21,7 +22,7 @@ import requests
 from tqdm import tqdm
 
 
-from parser import *
+from .parser import *
 
 from itertools import chain
 
@@ -33,7 +34,7 @@ def limited_getattr(entity, i, default="", limit=8192):
         return v
 
     if limit < len(v):
-        print(f"Long attr val {entity}, {i}, {len(v)}")
+        logging.debug(f"Long attr val {entity}, {i}, {len(v)}")
         return v[:limit]
     else:
         return v
