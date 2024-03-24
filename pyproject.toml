@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[bdist_wheel]
+universal = 0
+
+[project]
+name = "dd2db"
+version = "0.0.1"
+readme = "README.md"
+authors = [{name = "Brian M. Dennis"}]
+description = "Discogs datasets 2 database CLI tool"
+keywords = ["discogs", "sqlite3", "postgresql", "database"]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",	
+    "Programming Language :: Python :: 3.12",     
+]
+
+dependencies = [
+	     "sqlite-utils",
+	     "click",
+	     "docopt",
+	     "lxml",
+	     "requests",
+	     "httpx",
+	     "tqdm",
+]
+
+requires-python = ">= 3.11"
+
+[project.urls]
+Homepage = "https://github.com/crossjam/dd2db"
+Changelog = "https://github.com/crossjam/dd2db/releases"
+Issues = "https://github.com/crossjam/dd2db/issues"
+CI = "https://github.com/crossjam/dd2db/actions"
+
+[project.scripts]
+dd2db = "dd2db.cli:cli"
+
+[project.optional-dependencies]
+
+test = ["pytest"]
+
+
+
+
