@@ -1,4 +1,6 @@
 import logging
+import os.path
+import subprocess
 import sys
 
 from importlib import resources
@@ -7,9 +9,14 @@ from pathlib import Path
 import click
 import httpx as requests
 
+from psycopg2 import sql
+
 from .logconfig import DEFAULT_LOG_FORMAT, logging_config
 
-from .exporter import _exporters
+from .exporter import _exporters, csv_headers
+
+from ..postgresql.dbconfig import connect_db, Config
+from ..postgresql.sql import pre_ingest_sql, post_ingest_sql
 
 
 @click.group()
@@ -136,3 +143,82 @@ def export_dumps(ctx, datadir, output, bz2, limit, export, apicounts, dry_run, d
         )
         logging.info("%s: %s", entity, exporter)
         exporter.export()
+
+
+def load_csv(filename, db):
+    logging.info(f"Importing data from {filename}")
+    base, fname = os.path.split(filename)
+    table, ext = fname.split(".", 1)
+    if ext.startswith("csv"):
+        q = sql.SQL("COPY {} ({}) FROM STDIN WITH CSV HEADER").format(
+            sql.Identifier(table),
+            sql.SQL(", ").join(map(sql.Identifier, csv_headers[table])),
+        )
+
+    if ext == "csv":
+        fp = open(filename)
+    elif ext == "csv.bz2":
+        fp = bz2.BZ2File(filename)
+    else:
+        logging.error("%s doesn't have recognized extension", filename)
+
+    cursor = db.cursor()
+    cursor.copy_expert(q, fp)
+    db.commit()
+
+
+@cli.command(name="importcsv")
+@click.option(
+    "--pgconfig",
+    "pgservicefile",
+    default=Path("~/.pg_service.conf").expanduser(),
+    envvar="PGSERVICEFILE",
+    type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
+)
+@click.argument(
+    "fnames",
+    nargs=-1,
+    type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
+)
+def importcsv(fnames, pgservicefile):
+    logging.info("Passed pg service file: %s", pgservicefile)
+    logging.info("Ingesting %d csv files: %s", len(fnames), fnames)
+
+    root = Path(__file__).resolve()
+
+    if not pgservicefile.exists():
+        pgservicefile = root.parent / "postgresql.conf"
+        pgservicefile = Path(os.path.join(root, "postgresql.conf"))
+        logging.warn("Set pg service configuration to: %s", pgservicefile)
+
+    logging.info("pg servicefile: %s", pgservicefile)
+    config = Config(pgservicefile)
+    db = connect_db(config)
+
+    for fname in pre_ingest_sql:
+        logging.info("Executing pre-ingest sql file: %s", fname)
+        cmd = ["psql", "--file", str(fname)]
+        logging.info("Command: %s", cmd)
+        subprocess.run(
+            cmd,
+            check=True,
+            # shell=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+    for fname in fnames:
+        logging.info("Loading %s", fname)
+        # load_csv(fname, db)
+
+    for fname in post_ingest_sql:
+        logging.info("Executing post-ingest sql file: %s", fname)
+        cmd = ["psql", "--file", str(fname)]
+        logging.info("Command: %s", cmd)
+        # subprocess.run(
+        #     cmd,
+        #     check=True,
+        #     # shell=True,
+        #     stdout=sys.stdout,
+        #     stderr=sys.stderr,
+        # )

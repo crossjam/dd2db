@@ -29,6 +29,7 @@ dependencies = [
 	     "requests",
 	     "httpx",
 	     "tqdm",
+	     "psycopg2",
 ]
 
 requires-python = ">= 3.11"

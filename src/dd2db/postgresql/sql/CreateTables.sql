@@ -1,5 +1,5 @@
 --- artists
-CREATE TABLE artist (
+CREATE TABLE IF NOT EXISTS artist (
     id              integer NOT NULL,
     name            text NOT NULL,
     realname        text,
@@ -8,39 +8,39 @@ CREATE TABLE artist (
     data_quality    text
 );
 
-CREATE TABLE artist_url (
+CREATE TABLE IF NOT EXISTS artist_url (
     id              SERIAL,
     artist_id       integer NOT NULL,
     url             text NOT NULL
 );
 
-CREATE TABLE artist_namevariation (
+CREATE TABLE IF NOT EXISTS artist_namevariation (
     id              SERIAL,
     artist_id       integer NOT NULL,
     name            text NOT NULL
 );
 
-CREATE TABLE artist_alias (
+CREATE TABLE IF NOT EXISTS artist_alias (
     artist_id       integer NOT NULL,
     alias_name      text NOT NULL,
     alias_artist_id integer
 );
 
-CREATE TABLE artist_image (
+CREATE TABLE IF NOT EXISTS artist_image (
     artist_id       integer NOT NULL,
     type            text,
     width           integer,
     height          integer
 );
 
-CREATE TABLE group_member (
+CREATE TABLE IF NOT EXISTS group_member (
     group_artist_id     integer NOT NULL,
     member_artist_id    integer NOT NULL,
     member_name         text NOT NULL
 );
 
 --- labels
-CREATE TABLE label (
+CREATE TABLE IF NOT EXISTS label (
     id              integer NOT NULL,
     name            text NOT NULL,
     contact_info    text,
@@ -52,13 +52,13 @@ CREATE TABLE label (
     data_quality    text
 );
 
-CREATE TABLE label_url (
+CREATE TABLE IF NOT EXISTS label_url (
     id              SERIAL,
     label_id        integer NOT NULL,
     url             text NOT NULL
 );
 
-CREATE TABLE label_image (
+CREATE TABLE IF NOT EXISTS label_image (
     label_id        integer NOT NULL,
     type            text,
     width           integer,
@@ -66,7 +66,7 @@ CREATE TABLE label_image (
 );
 
 --- masters
-CREATE TABLE master (
+CREATE TABLE IF NOT EXISTS master (
     id              integer NOT NULL,
     title           text NOT NULL,
     year            integer,
@@ -74,7 +74,7 @@ CREATE TABLE master (
     data_quality    text
 );
 
-CREATE TABLE master_artist (
+CREATE TABLE IF NOT EXISTS master_artist (
     id              SERIAL,
     master_id       integer NOT NULL,
     artist_id       integer NOT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE master_artist (
     role            text
 );
 
-CREATE TABLE master_video (
+CREATE TABLE IF NOT EXISTS master_video (
     id              SERIAL,
     master_id       integer NOT NULL,
     duration        integer,
@@ -94,19 +94,19 @@ CREATE TABLE master_video (
     uri             text
 );
 
-CREATE TABLE master_genre (
+CREATE TABLE IF NOT EXISTS master_genre (
     id              SERIAL,
     master_id       integer NOT NULL,
     genre           text
 );
 
-CREATE TABLE master_style (
+CREATE TABLE IF NOT EXISTS master_style (
     id              SERIAL,
     master_id       integer NOT NULL,
     style           text
 );
 
-CREATE TABLE master_image (
+CREATE TABLE IF NOT EXISTS master_image (
     master_id       integer NOT NULL,
     type            text,
     width           integer,
@@ -114,7 +114,7 @@ CREATE TABLE master_image (
 );
 
 --- releases
-CREATE TABLE release (
+CREATE TABLE IF NOT EXISTS release (
     id              integer NOT NULL,
     title           text NOT NULL,
     released        text,
@@ -126,7 +126,7 @@ CREATE TABLE release (
     status          text
 );
 
-CREATE TABLE release_artist (
+CREATE TABLE IF NOT EXISTS release_artist (
     id              SERIAL,
     release_id      integer NOT NULL,
     artist_id       integer NOT NULL,
@@ -139,7 +139,7 @@ CREATE TABLE release_artist (
     tracks          text
 );
 
-CREATE TABLE release_label (
+CREATE TABLE IF NOT EXISTS release_label (
     id              SERIAL,
     release_id      integer NOT NULL,
     label_id        integer,
@@ -147,18 +147,18 @@ CREATE TABLE release_label (
     catno           text
 );
 
-CREATE TABLE release_genre (
+CREATE TABLE IF NOT EXISTS release_genre (
     id              SERIAL,
     release_id      integer NOT NULL,
     genre           text
 );
 
-CREATE TABLE release_style (
+CREATE TABLE IF NOT EXISTS release_style (
     release_id      integer NOT NULL,
     style           text
 );
 
-CREATE TABLE release_format (
+CREATE TABLE IF NOT EXISTS release_format (
     id              SERIAL,
     release_id      integer NOT NULL,
     name            text,
@@ -167,7 +167,7 @@ CREATE TABLE release_format (
     descriptions    text
 );
 
-CREATE TABLE release_track (
+CREATE TABLE IF NOT EXISTS release_track (
     id              SERIAL,
     release_id      integer NOT NULL,
     sequence        integer NOT NULL,
@@ -178,7 +178,7 @@ CREATE TABLE release_track (
     track_id        integer
 );
 
-CREATE TABLE release_track_artist (
+CREATE TABLE IF NOT EXISTS release_track_artist (
     id              SERIAL,
     track_id        integer,
     release_id      integer NOT NULL,
@@ -193,7 +193,7 @@ CREATE TABLE release_track_artist (
     tracks          text
 );
 
-CREATE TABLE release_identifier (
+CREATE TABLE IF NOT EXISTS release_identifier (
     id              SERIAL,
     release_id      integer NOT NULL,
     description     text,
@@ -201,7 +201,7 @@ CREATE TABLE release_identifier (
     value           text
 );
 
-CREATE TABLE release_video (
+CREATE TABLE IF NOT EXISTS release_video (
     id              SERIAL,
     release_id      integer NOT NULL,
     duration        integer,
@@ -210,7 +210,7 @@ CREATE TABLE release_video (
     uri             text
 );
 
-CREATE TABLE release_company (
+CREATE TABLE IF NOT EXISTS release_company (
     id                  SERIAL,
     release_id          integer NOT NULL,
     company_id          integer NOT NULL,
@@ -220,7 +220,7 @@ CREATE TABLE release_company (
     uri                 text
 ); 
 
-CREATE TABLE release_image (
+CREATE TABLE IF NOT EXISTS release_image (
     release_id      integer NOT NULL,
     type            text,
     width           integer,
