@@ -5,9 +5,11 @@ import sys
 
 from importlib import resources
 from pathlib import Path
+from pprint import pformat
 
 import click
 import httpx as requests
+import psycopg2
 
 from psycopg2 import sql
 
@@ -64,7 +66,7 @@ def cli(ctx, log_format, log_level, log_file):
         ["artist", "label", "release", "master", "all"],
         case_sensitive=False,
     ),
-    help="Limit export to some entities (repeatable)",
+    help="Limit export to some entity types (repeatable)",
 )
 @click.option(
     "--apicounts/--no-apicounts",
@@ -167,20 +169,40 @@ def load_csv(filename, db):
     db.commit()
 
 
-@cli.command(name="importcsv")
+@cli.command(name="pgimportcsv")
 @click.option(
     "--pgconfig",
     "pgservicefile",
     default=Path("~/.pg_service.conf").expanduser(),
     envvar="PGSERVICEFILE",
     type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
+    help="Location of a PostgreSQL configuration file",
+)
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+@click.option(
+    "--service",
+    type=click.STRING,
+    default="discogs",
+    show_default=True,
+    help="Select a service segment from the PostgreSQL configuration file",
 )
 @click.argument(
     "fnames",
     nargs=-1,
     type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
 )
-def importcsv(fnames, pgservicefile):
+def pgimportcsv(fnames, pgservicefile, dry_run, service):
+    """Ingest [FNAMES] csv files into a PostgreSQL database"""
+
+    if not fnames:
+        logging.error("No files passed on command line, exiting")
+        sys.exit(0)
+
     logging.info("Passed pg service file: %s", pgservicefile)
     logging.info("Ingesting %d csv files: %s", len(fnames), fnames)
 
@@ -192,13 +214,15 @@ def importcsv(fnames, pgservicefile):
         logging.warn("Set pg service configuration to: %s", pgservicefile)
 
     logging.info("pg servicefile: %s", pgservicefile)
-    config = Config(pgservicefile)
-    db = connect_db(config)
+    logging.info("dry_run: %s", dry_run)
 
+    db = psycopg2.connect(**{"service": service})
     for fname in pre_ingest_sql:
         logging.info("Executing pre-ingest sql file: %s", fname)
-        cmd = ["psql", "--file", str(fname)]
+        cmd = ["psql", f"service={service}", "--file", str(fname)]
         logging.info("Command: %s", cmd)
+        if dry_run:
+            continue
         subprocess.run(
             cmd,
             check=True,
@@ -209,16 +233,20 @@ def importcsv(fnames, pgservicefile):
 
     for fname in fnames:
         logging.info("Loading %s", fname)
-        # load_csv(fname, db)
+        if dry_run:
+            continue
+        load_csv(fname, db)
 
     for fname in post_ingest_sql:
         logging.info("Executing post-ingest sql file: %s", fname)
-        cmd = ["psql", "--file", str(fname)]
+        cmd = ["psql", f"service={service}", "--file", str(fname)]
         logging.info("Command: %s", cmd)
-        # subprocess.run(
-        #     cmd,
-        #     check=True,
-        #     # shell=True,
-        #     stdout=sys.stdout,
-        #     stderr=sys.stderr,
-        # )
+        if dry_run:
+            continue
+        subprocess.run(
+            cmd,
+            check=True,
+            # shell=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
