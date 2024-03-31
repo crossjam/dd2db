@@ -13,3 +13,14 @@ real world recorded music data (supports
 years as of 2024), updated monthly, and of course a bit messy.
 
 [1]: https://data.discogs.com/
+
+## Quick start
+
+```bash
+$ python3 -m venv dd2db
+$ source dd2db/bin/activate
+$ git clone https://github.com/crossjam/dd2db.git
+$ cd dd2db
+$ pip3 install --upgrade -e .
+$ dd2db --help
+```
