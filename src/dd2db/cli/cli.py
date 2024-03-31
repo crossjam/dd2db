@@ -18,7 +18,7 @@ from .logconfig import DEFAULT_LOG_FORMAT, logging_config
 from .exporter import _exporters, csv_headers
 
 from ..postgresql.dbconfig import connect_db, Config
-from ..postgresql.sql import pre_ingest_sql, post_ingest_sql
+from ..postgresql.sql import pre_ingest_sql, post_ingest_sql, drop_sql
 
 
 @click.group()
@@ -47,7 +47,28 @@ def cli(ctx, log_format, log_level, log_file):
     ctx.ensure_object(dict)
 
 
-@cli.command(name="export")
+@cli.group(name="discogs")
+@click.pass_context
+def discogs(ctx):
+    """Command set for working with Discogs data dumps"""
+    pass
+
+
+@cli.group(name="postgres")
+@click.pass_context
+def postgres(ctx):
+    """Command set for Postgres work with Discogs data"""
+    pass
+
+
+@cli.group(name="sqlite")
+@click.pass_context
+def sqlite(ctx):
+    """Command set for sqlite3 work with Discogs data"""
+    pass
+
+
+@discogs.command(name="export")
 @click.option(
     "--bz2 / --no-bz2",
     default=False,
@@ -169,7 +190,7 @@ def load_csv(filename, db):
     db.commit()
 
 
-@cli.command(name="pgimportcsv")
+@postgres.command(name="importcsv")
 @click.option(
     "--pgconfig",
     "pgservicefile",
@@ -191,13 +212,19 @@ def load_csv(filename, db):
     show_default=True,
     help="Select a service segment from the PostgreSQL configuration file",
 )
+@click.option(
+    "--init-db/--no-init-db",
+    default=False,
+    help="Initialize PostgreSQL tables, constraints, and indexes",
+    show_default=True,
+)
 @click.argument(
     "fnames",
     nargs=-1,
     type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
 )
-def pgimportcsv(fnames, pgservicefile, dry_run, service):
-    """Ingest [FNAMES] csv files into a PostgreSQL database"""
+def pgimportcsv(fnames, pgservicefile, dry_run, service, init_db):
+    """Ingest csv files into a PostgreSQL database"""
 
     if not fnames:
         logging.error("No files passed on command line, exiting")
@@ -205,6 +232,135 @@ def pgimportcsv(fnames, pgservicefile, dry_run, service):
 
     logging.info("Passed pg service file: %s", pgservicefile)
     logging.info("Ingesting %d csv files: %s", len(fnames), fnames)
+
+    root = Path(__file__).resolve()
+
+    if not pgservicefile.exists():
+        pgservicefile = root.parent / "postgresql.conf"
+        pgservicefile = Path(os.path.join(root, "postgresql.conf"))
+        logging.warn("Set pg service configuration to: %s", pgservicefile)
+
+    logging.info("pg servicefile: %s", pgservicefile)
+    logging.info("dry_run: %s", dry_run)
+
+    db = psycopg2.connect(**{"service": service})
+
+    if init_db:
+        for fname in pre_ingest_sql:
+            logging.info("Executing pre-ingest sql file: %s", fname)
+            cmd = ["psql", f"service={service}", "--file", str(fname)]
+            logging.info("Command: %s", cmd)
+            if dry_run:
+                continue
+            subprocess.run(
+                cmd,
+                check=True,
+                # shell=True,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+
+    for fname in fnames:
+        logging.info("Loading %s", fname)
+        if dry_run:
+            continue
+        load_csv(fname, db)
+
+    if init_db:
+        for fname in post_ingest_sql:
+            logging.info("Executing post-ingest sql file: %s", fname)
+            cmd = ["psql", f"service={service}", "--file", str(fname)]
+            logging.info("Command: %s", cmd)
+            if dry_run:
+                continue
+            subprocess.run(
+                cmd,
+                check=True,
+                # shell=True,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            )
+
+
+@postgres.command(name="drop")
+@click.option(
+    "--pgconfig",
+    "pgservicefile",
+    default=Path("~/.pg_service.conf").expanduser(),
+    envvar="PGSERVICEFILE",
+    type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
+    help="Location of a PostgreSQL configuration file",
+)
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+@click.option(
+    "--service",
+    type=click.STRING,
+    default="discogs",
+    show_default=True,
+    help="Select a service segment from the PostgreSQL configuration file",
+)
+def pgdrop(pgservicefile, dry_run, service):
+    """Drop discogs data PostgreSQL tables, constraints, and indexes"""
+
+    logging.info("Passed pg service file: %s", pgservicefile)
+
+    root = Path(__file__).resolve()
+
+    if not pgservicefile.exists():
+        pgservicefile = root.parent / "postgresql.conf"
+        pgservicefile = Path(os.path.join(root, "postgresql.conf"))
+        logging.warn("Set pg service configuration to: %s", pgservicefile)
+
+    logging.info("pg servicefile: %s", pgservicefile)
+    logging.info("dry_run: %s", dry_run)
+
+    db = psycopg2.connect(**{"service": service})
+    for fname in drop_sql:
+        logging.info("Executing drop sql file: %s", fname)
+        cmd = ["psql", f"service={service}", "--file", str(fname)]
+        logging.info("Command: %s", cmd)
+        if dry_run:
+            continue
+        subprocess.run(
+            cmd,
+            check=True,
+            # shell=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+
+@postgres.command(name="init")
+@click.option(
+    "--pgconfig",
+    "pgservicefile",
+    default=Path("~/.pg_service.conf").expanduser(),
+    envvar="PGSERVICEFILE",
+    type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
+    help="Location of a PostgreSQL configuration file",
+)
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+@click.option(
+    "--service",
+    type=click.STRING,
+    default="discogs",
+    show_default=True,
+    help="Select a service segment from the PostgreSQL configuration file",
+)
+def pginit(pgservicefile, dry_run, service):
+    """Initializes discogs data PostgreSQL tables"""
+
+    logging.info("Passed pg service file: %s", pgservicefile)
 
     root = Path(__file__).resolve()
 
@@ -231,11 +387,45 @@ def pgimportcsv(fnames, pgservicefile, dry_run, service):
             stderr=sys.stderr,
         )
 
-    for fname in fnames:
-        logging.info("Loading %s", fname)
-        if dry_run:
-            continue
-        load_csv(fname, db)
+
+@postgres.command(name="optimize")
+@click.option(
+    "--pgconfig",
+    "pgservicefile",
+    default=Path("~/.pg_service.conf").expanduser(),
+    envvar="PGSERVICEFILE",
+    type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
+    help="Location of a PostgreSQL configuration file",
+)
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+@click.option(
+    "--service",
+    type=click.STRING,
+    default="discogs",
+    show_default=True,
+    help="Select a service segment from the PostgreSQL configuration file",
+)
+def pgoptimize(pgservicefile, dry_run, service):
+    """Initializes discogs data PostgreSQL constraints and indexes"""
+
+    logging.info("Passed pg service file: %s", pgservicefile)
+
+    root = Path(__file__).resolve()
+
+    if not pgservicefile.exists():
+        pgservicefile = root.parent / "postgresql.conf"
+        pgservicefile = Path(os.path.join(root, "postgresql.conf"))
+        logging.warn("Set pg service configuration to: %s", pgservicefile)
+
+    logging.info("pg servicefile: %s", pgservicefile)
+    logging.info("dry_run: %s", dry_run)
+
+    db = psycopg2.connect(**{"service": service})
 
     for fname in post_ingest_sql:
         logging.info("Executing post-ingest sql file: %s", fname)
