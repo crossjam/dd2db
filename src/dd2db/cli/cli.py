@@ -441,3 +441,65 @@ def pgoptimize(pgservicefile, dry_run, service):
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
+
+
+# sqlite subgroup
+
+
+@sqlite.command(name="drop")
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+def sqlitedrop(dry_run):
+    """Drop discogs data sqlite tables, constraints, and indexes"""
+    pass
+
+
+@sqlite.command(name="init")
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+def sqliteinit(dry_run):
+    """Initializes discogs data sqlite tables"""
+    pass
+
+
+@sqlite.command(name="optimize")
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+def sqliteptimize(dry_run):
+    """Initializes discogs data sqlite constraints and indexes"""
+    pass
+
+
+@sqlite.command(name="importcsv")
+@click.option(
+    "--dry-run/--no-dry-run",
+    default=False,
+    help="Disable command execution",
+    show_default=True,
+)
+@click.option(
+    "--init-db/--no-init-db",
+    default=False,
+    help="Initialize PostgreSQL tables, constraints, and indexes",
+    show_default=True,
+)
+@click.argument(
+    "fnames",
+    nargs=-1,
+    type=click.Path(dir_okay=False, readable=True, resolve_path=True, path_type=Path),
+)
+def sqliteimportcsv(fnames, dry_run, init_db):
+    """Ingest csv files into an asqlite database"""
+    pass
