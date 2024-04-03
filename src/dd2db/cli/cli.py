@@ -1,3 +1,4 @@
+import bz2
 import logging
 import os.path
 import subprocess
