@@ -169,7 +169,7 @@ def export_dumps(ctx, datadir, output, bz2, limit, export, apicounts, dry_run, d
         exporter.export()
 
 
-def load_csv(filename, db):
+def postgres_load_csv(filename, db):
     logging.info(f"Importing data from {filename}")
     base, fname = os.path.split(filename)
     table, ext = fname.split(".", 1)
@@ -265,7 +265,7 @@ def pgimportcsv(fnames, pgservicefile, dry_run, service, init_db):
         logging.info("Loading %s", fname)
         if dry_run:
             continue
-        load_csv(fname, db)
+        postgres_load_csv(fname, db)
 
     if init_db:
         for fname in post_ingest_sql:
